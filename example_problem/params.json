@@ -1,0 +1,50 @@
+{
+  "EggsPerRegular": {
+    "shape": [],
+    "type": "int",
+    "definition": "Number of eggs required per regular sandwich",
+    "value": 2
+  },
+  "BaconPerRegular": {
+    "shape": [],
+    "type": "int",
+    "definition": "Number of bacon slices required per regular sandwich",
+    "value": 3
+  },
+  "EggsPerSpecial": {
+    "shape": [],
+    "type": "int",
+    "definition": "Number of eggs required per special sandwich",
+    "value": 3
+  },
+  "BaconPerSpecial": {
+    "shape": [],
+    "type": "int",
+    "definition": "Number of bacon slices required per special sandwich",
+    "value": 4
+  },
+  "TotalEggs": {
+    "shape": [],
+    "type": "int",
+    "definition": "Total number of eggs available",
+    "value": 100
+  },
+  "TotalBacon": {
+    "shape": [],
+    "type": "int",
+    "definition": "Total number of bacon slices available",
+    "value": 120
+  },
+  "ProfitRegular": {
+    "shape": [],
+    "type": "float",
+    "definition": "Profit per regular sandwich",
+    "value": 5.5
+  },
+  "ProfitSpecial": {
+    "shape": [],
+    "type": "float",
+    "definition": "Profit per special sandwich",
+    "value": 7.0
+  }
+}

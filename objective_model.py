@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from utils import (
     get_response,
@@ -60,14 +62,20 @@ def get_objective_formulation(
     labels: dict | None = None
 ):
     if isinstance(rag_mode, RAGMode):
-        match rag_mode:
-            case RAGMode.PROBLEM_DESCRIPTION:
-                rag = get_rag_from_problem_description(desc, RAGFormat.OBJECTIVE_FORMULATION, top_k=10)
-            case RAGMode.CONSTRAINT_OR_OBJECTIVE:
-                rag = ""
-            case RAGMode.PROBLEM_LABELS:
-                assert labels is not None
-                rag = get_rag_from_problem_categories(desc, labels, RAGFormat.OBJECTIVE_FORMULATION, top_k=10)
+        # NOTE: avoid Python 3.10+ match/case to support Python 3.9 environments.
+        if rag_mode == RAGMode.PROBLEM_DESCRIPTION:
+            rag = get_rag_from_problem_description(
+                desc, RAGFormat.OBJECTIVE_FORMULATION, top_k=10
+            )
+        elif rag_mode == RAGMode.CONSTRAINT_OR_OBJECTIVE:
+            rag = ""
+        elif rag_mode == RAGMode.PROBLEM_LABELS:
+            assert labels is not None
+            rag = get_rag_from_problem_categories(
+                desc, labels, RAGFormat.OBJECTIVE_FORMULATION, top_k=10
+            )
+        else:
+            rag = ""
         rag = f"-----\n{rag}-----\n\n"
     else:
         rag = ""

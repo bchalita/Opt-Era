@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import pandas as pd
 from rag.query_vector_db import RAGFormat, get_rag_from_problem_categories, get_rag_from_problem_description
@@ -313,12 +315,18 @@ def get_constraints(
             problem_name = current_problem.iloc[0].problem_name
         else:
             problem_name = None
-        match rag_mode:
-            case RAGMode.PROBLEM_DESCRIPTION | RAGMode.CONSTRAINT_OR_OBJECTIVE:
-                rag = get_rag_from_problem_description(desc, RAGFormat.PROBLEM_DESCRIPTION_CONSTRAINTS, top_k=5)
-            case RAGMode.PROBLEM_LABELS:
-                assert labels is not None
-                rag = get_rag_from_problem_categories(desc, labels, RAGFormat.PROBLEM_DESCRIPTION_CONSTRAINTS, top_k=5)
+        # NOTE: avoid Python 3.10+ match/case to support Python 3.9 environments.
+        if rag_mode in (RAGMode.PROBLEM_DESCRIPTION, RAGMode.CONSTRAINT_OR_OBJECTIVE):
+            rag = get_rag_from_problem_description(
+                desc, RAGFormat.PROBLEM_DESCRIPTION_CONSTRAINTS, top_k=5
+            )
+        elif rag_mode == RAGMode.PROBLEM_LABELS:
+            assert labels is not None
+            rag = get_rag_from_problem_categories(
+                desc, labels, RAGFormat.PROBLEM_DESCRIPTION_CONSTRAINTS, top_k=5
+            )
+        else:
+            rag = ""
         rag = f"-----\n{rag}-----\n\n"
     else:
         rag = ""

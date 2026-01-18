@@ -2,7 +2,13 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 from enum import Enum
-load_dotenv()
+# Load environment variables from .env if present.
+# In some restricted environments, reading dotfiles may be blocked; fall back to
+# regular environment variables in that case.
+try:
+    load_dotenv()
+except PermissionError:
+    pass
 
 root_path = Path(".")
 while not (root_path/".git").exists():

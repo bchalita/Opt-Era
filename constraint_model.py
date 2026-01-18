@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from utils import get_response, extract_json_from_end, shape_string_to_list
 import pandas as pd
@@ -345,14 +347,20 @@ def get_constraint_formulations(
     labels: dict | None = None
 ):
     if isinstance(rag_mode, RAGMode):
-        match rag_mode:
-            case RAGMode.PROBLEM_DESCRIPTION:
-                rag = get_rag_from_problem_description(desc, RAGFormat.CONSTRAINT_FORMULATION, top_k=5)
-            case RAGMode.CONSTRAINT_OR_OBJECTIVE:
-                rag = ""
-            case RAGMode.PROBLEM_LABELS:
-                assert labels is not None
-                rag = get_rag_from_problem_categories(desc, labels, RAGFormat.CONSTRAINT_FORMULATION, top_k=5)
+        # NOTE: avoid Python 3.10+ match/case to support Python 3.9 environments.
+        if rag_mode == RAGMode.PROBLEM_DESCRIPTION:
+            rag = get_rag_from_problem_description(
+                desc, RAGFormat.CONSTRAINT_FORMULATION, top_k=5
+            )
+        elif rag_mode == RAGMode.CONSTRAINT_OR_OBJECTIVE:
+            rag = ""
+        elif rag_mode == RAGMode.PROBLEM_LABELS:
+            assert labels is not None
+            rag = get_rag_from_problem_categories(
+                desc, labels, RAGFormat.CONSTRAINT_FORMULATION, top_k=5
+            )
+        else:
+            rag = ""
         rag = f"-----\n{rag}-----\n\n"
     else:
         rag = ""
