@@ -1,17 +1,33 @@
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 from enum import Enum
+import os
 root_path = Path("..")
 root_path = root_path.absolute().parent
 sys.path.append(str(root_path/"rag"))
 from rag_utils import constraint_path, problem_descriptions_vector_db_path, constraint_vector_db_path, objective_descriptions_vector_db_path
 import pandas as pd
 from typing import List, Tuple, Dict, Union
-from langchain_chroma import Chroma
-from langchain_openai import OpenAIEmbeddings
 
-openai_key = "###"
-openai_org = "###"
+# NOTE:
+# Some environments (including certain sandboxed runners) block access to dotfiles like ".env".
+# Unfortunately, chromadb/pydantic may try to read ".env" from the *current working directory*.
+# To avoid crashing when a ".env" exists but is not readable, temporarily change cwd to a
+# directory that does not contain ".env" during these imports.
+_orig_cwd = os.getcwd()
+try:
+    os.chdir(str(root_path / "rag"))
+    from langchain_chroma import Chroma
+    from langchain_openai import OpenAIEmbeddings
+finally:
+    os.chdir(_orig_cwd)
+
+openai_key = os.getenv("OPENAI_API_KEY")
+openai_org = os.getenv("OPENAI_ORG") or os.getenv("OPENAI_ORGANIZATION")
+if not openai_key:
+    raise RuntimeError("OPENAI_API_KEY is not set (required for RAG embeddings).")
 
 class RAGFormat(Enum):
     PROBLEM_DESCRIPTION_OBJECTIVE = 1

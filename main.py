@@ -12,13 +12,15 @@ from utils import load_state, save_state, Logger
 from objective import get_objective
 from objective_model import get_objective_formulation
 from execute_code import execute_and_debug
-from utils import create_state, get_labels
+from utils import create_state, get_labels, generate_latex_report
 from rag.rag_utils import RAGMode
 
 parser = argparse.ArgumentParser(description="Run the optimization problem")
 parser.add_argument("--dir", type=str, help="Directory of the problem")
 parser.add_argument("--devmode", type=int, default=1)
 parser.add_argument("--rag-mode", type=RAGMode, choices=list(RAGMode), default=None, help="RAG mode")
+parser.add_argument("--export-tex", type=int, default=0, help="Generate a LaTeX report (report.tex) from the final state")
+parser.add_argument("--model", type=str, default="gpt-4o", help="LLM model name (e.g. gpt-5, gpt-4o)")
 args = parser.parse_args()
 
 if __name__ == "__main__":
@@ -29,7 +31,7 @@ if __name__ == "__main__":
     DEV_MODE = args.devmode
     RAG_MODE = args.rag_mode
     ERROR_CORRECTION = True
-    MODEL = "gpt-4o"
+    MODEL = args.model
     # MODEL = "llama3-70b-8192"
     ##############################################
 
@@ -133,4 +135,7 @@ if __name__ == "__main__":
     state = load_state(os.path.join(run_dir, "state_6_code.json"))
     generate_code(state, run_dir)
     execute_and_debug(state, model=MODEL, dir=run_dir, logger=logger)
+    if args.export_tex:
+        # Create a clean LaTeX report from the final state
+        generate_latex_report(state, dir=run_dir, model=MODEL, logger=logger)
     #######

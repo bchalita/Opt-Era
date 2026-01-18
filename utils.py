@@ -1,14 +1,17 @@
+from __future__ import annotations
+
 import os
 import json
-from groq import Groq
 import openai
 
-groq_key = "###"
-openai_key = "###"
-openai_org = "###"
-
-groq_client = Groq(api_key=groq_key)
-open_ai_client = openai.Client(api_key=openai_key, organization=openai_org)
+# NOTE:
+# - We keep Groq support in the repo, but it's disabled/commented out by default
+#   so you can run OpenAI-only without having `groq` installed.
+# - To use Groq later, uncomment the lines below and set GROQ_API_KEY.
+#
+# from groq import Groq
+# groq_key = os.getenv("GROQ_API_KEY")
+# groq_client = Groq(api_key=groq_key) if groq_key else None
 
 
 def extract_json_from_end(text):
@@ -108,12 +111,21 @@ def extract_list_from_end(text):
     return jj
 
 
-# "llama3-70b-8192"
 def get_response(prompt, model="llama3-70b-8192"):
+    # OpenAI-only path (Groq kept but disabled above)
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    if not openai_api_key:
+        raise RuntimeError("OPENAI_API_KEY is not set.")
+
+    openai_org = os.getenv("OPENAI_ORG") or os.getenv("OPENAI_ORGANIZATION")
+    client = openai.Client(api_key=openai_api_key, organization=openai_org)
+
     if model == "llama3-70b-8192":
-        client = groq_client
-    else:
-        client = open_ai_client
+        raise RuntimeError(
+            'Groq path is currently disabled. Use an OpenAI model (e.g. "gpt-5", "gpt-4o") '
+            "or re-enable Groq in utils.py."
+        )
+
     chat_completion = client.chat.completions.create(
         messages=[
             {
@@ -198,6 +210,93 @@ def get_labels(dir):
     with open(os.path.join(dir, "labels.json"), "r") as f:
         labels = json.load(f)
     return labels
+
+
+_LATEX_REPORT_PROMPT = """
+You are an expert operations research analyst.
+
+You will be given a structured JSON "final_state" describing an optimization problem:
+- natural language description
+- parameters (shape/type/definition) and their values
+- decision variables (shape/type/definition)
+- objective (natural language + LaTeX formulation + solver code)
+- constraints (natural language + LaTeX formulation + solver code)
+
+Your task: generate a SINGLE, clean, standalone LaTeX document (a full .tex file) that:
+- includes the full English problem description
+- lists parameters in a readable table or itemized list (include definitions AND numeric values)
+- lists decision variables (with domains: integer/continuous/binary if available)
+- states the objective in math mode using the provided LaTeX formulation
+- states constraints in an aligned math environment using the provided LaTeX formulations
+- uses appropriate LaTeX packages (amsmath, amssymb, geometry, etc.)
+- compiles as-is (no missing \\begin/\\end)
+
+Important formatting rules:
+- Output ONLY the LaTeX file content between two ===== lines like:
+=====
+\\documentclass{...}
+...
+=====
+- Use exactly five '=' characters for the delimiter lines (=====).
+- Do NOT output anything before the first ===== or after the last =====.
+- Prefer \\[ ... \\] or align/align* environments for math.
+- Do NOT include markdown code fences.
+
+Here is the final_state JSON:
+<<FINAL_STATE_JSON>>
+"""
+
+
+def extract_between_equal_signs(text: str) -> str:
+    """
+    Extract content between delimiter lines.
+
+    We *ask* the LLM to use "=====" but some models occasionally respond with "====".
+    Be robust to both.
+    """
+    # IMPORTANT:
+    # Do NOT use `text.find("====")` because "====" is a substring of "=====".
+    # If the response mixes delimiter formats (e.g., opening "=====" and closing "===="),
+    # a naive substring search can incorrectly match the first 4 characters of "=====".
+    #
+    # Instead, treat delimiters as *whole lines* containing exactly 4 or 5 '=' (ignoring
+    # surrounding whitespace), and extract the text between the first two delimiter lines.
+    import re
+
+    lines = text.splitlines()
+    delim_line_idxs: list[int] = []
+    for i, line in enumerate(lines):
+        if re.fullmatch(r"\s*={4,5}\s*", line):
+            delim_line_idxs.append(i)
+            if len(delim_line_idxs) >= 2:
+                break
+
+    if len(delim_line_idxs) >= 2:
+        start = delim_line_idxs[0] + 1
+        end = delim_line_idxs[1]
+        return "\n".join(lines[start:end]).strip()
+
+    return text.strip()
+
+
+def generate_latex_report(final_state: dict, dir: str, model: str, logger: Logger | None = None) -> str:
+    """
+    Generate a clean LaTeX report from the *final* state and write it to dir/report.tex.
+    """
+    # NOTE: Avoid str.format() here because the JSON content can contain braces that
+    # would be interpreted as format placeholders.
+    prompt = _LATEX_REPORT_PROMPT.replace("<<FINAL_STATE_JSON>>", json.dumps(final_state, indent=2))
+    if logger:
+        logger.log("Generating LaTeX report from final state...")
+    res = get_response(prompt, model=model)
+    tex = extract_between_equal_signs(res)
+
+    out_path = os.path.join(dir, "report.tex")
+    with open(out_path, "w") as f:
+        f.write(tex + "\n")
+    if logger:
+        logger.log(f"Wrote LaTeX report to {out_path}")
+    return out_path
 
 
 if __name__ == "__main__":

@@ -1,0 +1,6 @@
+A breakfast joint makes two different sandwiches: a regular and a special. Both need eggs and bacon.
+Each regular sandwich requires EggsPerRegular eggs and BaconPerRegular slices of bacon.
+Each special sandwich requires EggsPerSpecial eggs and BaconPerSpecial slices of bacon.
+The joint has a total of TotalEggs eggs and TotalBacon slices of bacon.
+It makes a profit of ProfitRegular per regular sandwich and a profit of ProfitSpecial per special sandwich.
+How many of each sandwich should be made to maximize profit?
